@@ -6,6 +6,7 @@ TOKEN = "8315190785:AAFNCBRiF1eimUpePthW2Om1s2F2eC_f8kg"
 ADMIN_ID = 8933825471
 BOT_USERNAME = "PrimeXStore00bot"
 FORCE_CHANNELS = ["@PrimeXStore0", "@PrimeXStore00", "@kingfreebots"]
+NOTIFY_CHANNEL = "@PrimeXStore0"
 FACEBOOK_PAGE = "https://www.facebook.com/profile.php?id=61592294575700"
 SUPPORT = "@PrimeXStore22"
 
@@ -76,17 +77,29 @@ def check_sub(uid):
     sub_cache[uid]=(time.time(),ok)
     return ok,nj
 
-# كل الدول بالاعلام
+def send_channel_notify(text):
+    try: bot.send_message(NOTIFY_CHANNEL, text, parse_mode="Markdown")
+    except:
+        try: bot.send_message("@PrimeXStore00", text, parse_mode="Markdown")
+        except: pass
+
 FLAGS = {"india":"🇮🇳 India","egypt":"🇪🇬 Egypt","vietnam":"🇻🇳 Vietnam","ksa":"🇸🇦 KSA","pakistan":"🇵🇰 Pakistan","morocco":"🇲🇦 Morocco","myanmar":"🇲🇲 Myanmar","kenya":"🇰🇪 Kenya","indonesia":"🇮🇩 Indonesia","nigeria":"🇳🇬 Nigeria","usa":"🇺🇸 USA","ghana":"🇬🇭 Ghana","sudan":"🇸🇩 Sudan","germany":"🇩🇪 Germany","mozambique":"🇲🇿 Mozambique","random":"🌍 Random","rare":"💎 Rare"}
 
-# كل الاقسام اللي طلبتها
 CLEAN = {"india":0.3,"egypt":0.5,"vietnam":0.9,"ksa":1.5,"pakistan":0.7,"morocco":0.6,"myanmar":0.3,"kenya":0.5,"indonesia":0.6,"nigeria":0.5}
 SPAM = {"india":0.2,"random":0.3,"rare":0.45,"usa":0.25,"myanmar":0.2}
-WHATSAPP = {"indonesia":0.25}
 TIKTOK = {"germany":0.2,"sudan":0.15}
 FACEBOOK = {"indonesia":0.1,"sudan":0.1,"ghana":0.15}
 INSTA = {"ghana":0.15}
 TINDER = {"indonesia":0.07,"mozambique":0.09}
+
+# السعر الجديد - كل 5 تعزيزات = 0.25$
+BOOSTS = {
+    "5": {"price": 0.25, "points": 20},
+    "10": {"price": 0.50, "points": 40},
+    "25": {"price": 1.25, "points": 100},
+    "50": {"price": 2.50, "points": 200},
+    "100": {"price": 5.00, "points": 400},
+}
 
 FOLLOWER_COUNTS = {"10":0.09,"20":0.18,"50":0.45,"100":0.9,"200":1.8,"300":2.7,"400":3.6,"500":4.5}
 ACCOUNTS = {"tiktok_1300":{"name":"TikTok 1300 Followers","price":1.5},"tiktok_2200":{"name":"TikTok 2200 Followers","price":2.0}}
@@ -114,17 +127,16 @@ def main_menu(uid):
     bal=get_balance(uid)
     m=types.InlineKeyboardMarkup(row_width=2)
     m.add(types.InlineKeyboardButton(f"💰 ${bal:.2f}",callback_data="bal"),types.InlineKeyboardButton("📱 Numbers",callback_data="nums"))
-    m.add(types.InlineKeyboardButton("👥 Followers",callback_data="followers_main"),types.InlineKeyboardButton("👤 Accounts",callback_data="accounts_main"))
-    m.add(types.InlineKeyboardButton("⭐ Stars",callback_data="stars"),types.InlineKeyboardButton("💳 Recharge",callback_data="recharge"))
-    m.add(types.InlineKeyboardButton("🔗 Invite Link",callback_data="invite"),types.InlineKeyboardButton("💬 Support",url=f"https://t.me/{SUPPORT.replace('@','')}"))
+    m.add(types.InlineKeyboardButton("👥 Followers",callback_data="followers_main"),types.InlineKeyboardButton("🚀 Boosts",callback_data="boosts_main"))
+    m.add(types.InlineKeyboardButton("👤 Accounts",callback_data="accounts_main"),types.InlineKeyboardButton("⭐ Stars",callback_data="stars"))
+    m.add(types.InlineKeyboardButton("💳 Recharge",callback_data="recharge"),types.InlineKeyboardButton("💬 Support",url=f"https://t.me/{SUPPORT.replace('@','')}"))
     return m
 
 def nums_menu():
     m=types.InlineKeyboardMarkup(row_width=2)
     m.add(types.InlineKeyboardButton("✨ Clean SMS",callback_data="clean"),types.InlineKeyboardButton("🔥 Spam SMS",callback_data="spam"))
-    m.add(types.InlineKeyboardButton("💚 WhatsApp",callback_data="wa"),types.InlineKeyboardButton("🎵 TikTok Numbers",callback_data="tiktok"))
-    m.add(types.InlineKeyboardButton("👤 Facebook",callback_data="fb"),types.InlineKeyboardButton("📸 Instagram",callback_data="insta"))
-    m.add(types.InlineKeyboardButton("🔥 Tinder",callback_data="tinder"))
+    m.add(types.InlineKeyboardButton("🎵 TikTok Numbers",callback_data="tiktok"),types.InlineKeyboardButton("👤 Facebook",callback_data="fb"))
+    m.add(types.InlineKeyboardButton("📸 Instagram",callback_data="insta"),types.InlineKeyboardButton("🔥 Tinder",callback_data="tinder"))
     m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back"))
     return m
 
@@ -139,8 +151,7 @@ def build_nums(data,prefix):
 def followers_platforms_menu():
     m=types.InlineKeyboardMarkup(row_width=2)
     m.add(types.InlineKeyboardButton("🎵 TikTok",callback_data="fp_tiktok"),types.InlineKeyboardButton("📸 Instagram",callback_data="fp_instagram"))
-    m.add(types.InlineKeyboardButton("👤 Facebook",callback_data="fp_facebook"),types.InlineKeyboardButton("▶️ YouTube",callback_data="fp_youtube"))
-    m.add(types.InlineKeyboardButton("✈️ Telegram",callback_data="fp_telegram"))
+    m.add(types.InlineKeyboardButton("👤 Facebook",callback_data="fp_facebook"),types.InlineKeyboardButton("✈️ Telegram",callback_data="fp_telegram"))
     m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back"))
     return m
 
@@ -151,6 +162,13 @@ def followers_counts_menu(platform):
     m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="followers_main"))
     return m
 
+def boosts_menu():
+    m=types.InlineKeyboardMarkup(row_width=2)
+    for count,info in BOOSTS.items():
+        m.add(types.InlineKeyboardButton(f"🚀 {count} Boosts • ${info['price']} ({info['points']} pts)",callback_data=f"buy_boosts_{count}"))
+    m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back"))
+    return m
+
 def accounts_menu():
     m=types.InlineKeyboardMarkup(row_width=1)
     for k,v in ACCOUNTS.items():
@@ -159,20 +177,22 @@ def accounts_menu():
     return m
 
 WELCOME = """
-👑 PrimeX Store 👑
+🔥🔥🔥 PrimeX Store KING 🔥🔥🔥
+👑🔥💎 WELCOME TO THE FIRE STORE 💎🔥👑
 
-Welcome King!
+💥🔥 الخدمة الأقوى في الشرق الأوسط 🔥💥
 
-💰 Balance: ${bal}
-🆔 ID: {uid}
+💰 رصيدك: ${bal} 💸
+🆔 آيديك: {uid}
+👑 حالتك: ملك متوج 🔥
 
-Services:
-📱 Numbers - Clean / Spam / WhatsApp / TikTok / Facebook / Insta / Tinder 🌍
-👥 Followers - $0.09
-👤 Accounts
-⭐ Stars
+━━━━━━━━━━━━━━━━━━
+🚀🔥 خدماتنا النارية 🔥🚀
+📱 أرقام نارية
+👥 رشق متابعين بـ نار 🔥
+🚀 تعزيزات - 5 تعزيزات = $0.25 🔥
 
-👇 Choose 👇
+👇🔥 اختار خدمتك النارية يا ملك 🔥👇
 """
 
 @bot.message_handler(commands=['start'])
@@ -181,23 +201,18 @@ def start(msg):
     if is_banned(uid):
         bot.send_message(uid,"🚫 You are banned ❌")
         return
-    is_new = str(uid) not in users_cache
-    if is_new and uid!= ADMIN_ID:
-        for admin_id in admins_list:
-            try: bot.send_message(admin_id, f"🔔 New User!\n👤 {msg.from_user.first_name}\n🆔 {uid}\n@{msg.from_user.username}\nTotal: {len(users_cache)+1}", parse_mode="Markdown")
-            except: pass
     users_cache[str(uid)]={"name":msg.from_user.first_name,"username":msg.from_user.username}
     save_users()
     if is_admin(uid):
-        bot.send_message(uid,"👑 Admin Panel V51 ULTIMATE - All Features",reply_markup=admin_menu())
+        bot.send_message(uid,"👑 Admin Panel V53 FIRE 0.25$ 🔥",reply_markup=admin_menu())
         return
     ok,nj=check_sub(uid)
     if not ok:
         m=types.InlineKeyboardMarkup(row_width=1)
-        for ch in nj: m.add(types.InlineKeyboardButton(f"📢 {ch} - Join",url=f"https://t.me/{ch.replace('@','')}"))
-        m.add(types.InlineKeyboardButton("📘 Facebook Page - Like 👍",url=FACEBOOK_PAGE))
-        m.add(types.InlineKeyboardButton("✅ Done",callback_data="check"))
-        bot.send_message(uid,"⚠️ Must Subscribe First 👇\nJoin channels + Like Facebook Page",reply_markup=m)
+        for ch in nj: m.add(types.InlineKeyboardButton(f"📢 {ch} - Join 🔥",url=f"https://t.me/{ch.replace('@','')}"))
+        m.add(types.InlineKeyboardButton("📘 Facebook Page",url=FACEBOOK_PAGE))
+        m.add(types.InlineKeyboardButton("✅ Done 🔥",callback_data="check"))
+        bot.send_message(uid,"⚠️🔥 Must Subscribe First",reply_markup=m)
         return
     bot.send_message(uid,WELCOME.format(bal=round(get_balance(uid),2),uid=uid),reply_markup=main_menu(uid))
 
@@ -209,21 +224,18 @@ def cb(call):
         sub_cache.pop(uid,None)
         ok,nj=check_sub(uid)
         if not ok:
-            bot.answer_callback_query(call.id,"❌ Not yet!",show_alert=True)
+            bot.answer_callback_query(call.id,"❌ لسه مشتركتش!",show_alert=True)
             return
         bot.edit_message_text(WELCOME.format(bal=round(get_balance(uid),2),uid=uid),uid,call.message.message_id,reply_markup=main_menu(uid))
         return
     if is_admin(uid):
         if d=="admin_stats":
             total=sum(float(v) for v in balance_cache.values())
-            bot.edit_message_text(f"📊 Stats\n💰 Total: ${round(total,2)}\n👥 Users: {len(users_cache)}\n👑 Mods: {len(admins_list)}\n🚫 Banned: {len(banned_users)}",uid,call.message.message_id,reply_markup=admin_menu())
+            bot.edit_message_text(f"📊 Stats 🔥\n💰 Total: ${round(total,2)}\n👥 Users: {len(users_cache)}",uid,call.message.message_id,reply_markup=admin_menu())
         elif d=="admin_add":
             admin_states[uid]="await_id"
             bot.send_message(uid,"💰 Send user ID:")
         elif d=="admin_addmod":
-            if uid!= ADMIN_ID:
-                bot.answer_callback_query(call.id,"Only main admin!",show_alert=True)
-                return
             admin_states[uid]="await_mod"
             bot.send_message(uid,"👑 Send mod ID:")
         elif d=="admin_ban":
@@ -234,8 +246,7 @@ def cb(call):
             bot.send_message(uid,"🔓 Send ID to unban:")
         elif d=="admin_mods":
             txt="👑 Mods:\n"
-            for mod in admins_list: txt+=f"`{mod}` {'(Main)' if mod==ADMIN_ID else ''}\n"
-            txt+=f"\n🚫 Banned: {len(banned_users)}"
+            for mod in admins_list: txt+=f"`{mod}`\n"
             bot.send_message(uid,txt,parse_mode="Markdown",reply_markup=admin_menu())
         elif d=="admin_bc":
             broadcast_mode[uid]=True
@@ -267,57 +278,75 @@ def cb(call):
 
     if d=="bal": bot.answer_callback_query(call.id,f"${round(get_balance(uid),2)}"); return
     if d=="back": bot.edit_message_text(WELCOME.format(bal=round(get_balance(uid),2),uid=uid),uid,call.message.message_id,reply_markup=main_menu(uid)); return
-    if d=="nums": bot.edit_message_text("📱 Numbers - Categories:",uid,call.message.message_id,reply_markup=nums_menu()); return
-    if d=="clean": bot.edit_message_text("✨ Clean SMS - With Flags 🇪🇬:",uid,call.message.message_id,reply_markup=build_nums(CLEAN,"clean")); return
-    if d=="spam": bot.edit_message_text("🔥 Spam SMS - With Flags 🌍:",uid,call.message.message_id,reply_markup=build_nums(SPAM,"spam")); return
-    if d=="wa": bot.edit_message_text("💚 WhatsApp Numbers:",uid,call.message.message_id,reply_markup=build_nums(WHATSAPP,"wa")); return
+    if d=="nums": bot.edit_message_text("📱 Numbers - Categories: 🔥",uid,call.message.message_id,reply_markup=nums_menu()); return
+    if d=="clean": bot.edit_message_text("✨ Clean SMS:",uid,call.message.message_id,reply_markup=build_nums(CLEAN,"clean")); return
+    if d=="spam": bot.edit_message_text("🔥 Spam SMS:",uid,call.message.message_id,reply_markup=build_nums(SPAM,"spam")); return
     if d=="tiktok": bot.edit_message_text("🎵 TikTok Numbers:",uid,call.message.message_id,reply_markup=build_nums(TIKTOK,"tiktok")); return
     if d=="fb": bot.edit_message_text("👤 Facebook Numbers:",uid,call.message.message_id,reply_markup=build_nums(FACEBOOK,"fb")); return
     if d=="insta": bot.edit_message_text("📸 Instagram Numbers:",uid,call.message.message_id,reply_markup=build_nums(INSTA,"insta")); return
     if d=="tinder": bot.edit_message_text("🔥 Tinder Numbers:",uid,call.message.message_id,reply_markup=build_nums(TINDER,"tinder")); return
-    if d=="followers_main": bot.edit_message_text("👥 Followers - Platforms:",uid,call.message.message_id,reply_markup=followers_platforms_menu()); return
+    if d=="followers_main": bot.edit_message_text("👥 Followers - Platforms: 🔥",uid,call.message.message_id,reply_markup=followers_platforms_menu()); return
     if d.startswith("fp_"):
         platform=d.replace("fp_","")
-        bot.edit_message_text(f"👥 {platform.upper()} - Counts:",uid,call.message.message_id,reply_markup=followers_counts_menu(platform))
+        bot.edit_message_text(f"👥 {platform.upper()} - Counts: 🔥",uid,call.message.message_id,reply_markup=followers_counts_menu(platform))
         return
-    if d=="accounts_main": bot.edit_message_text("👤 Accounts:",uid,call.message.message_id,reply_markup=accounts_menu()); return
+    if d=="boosts_main":
+        bot.edit_message_text("🚀🔥 تعزيزات القنوات 🔥🚀\n💎 كل 5 = $0.25 - أرخص سعر 🔥\n⚡ تفعيل فوري",uid,call.message.message_id,reply_markup=boosts_menu())
+        return
+    if d=="accounts_main": bot.edit_message_text("👤 Accounts: 🔥",uid,call.message.message_id,reply_markup=accounts_menu()); return
     if d=="stars":
         m=types.InlineKeyboardMarkup(row_width=2)
         for k,price in STARS.items(): m.add(types.InlineKeyboardButton(f"⭐ {k} - ${price}",callback_data=f"buy_stars_{k}"))
         m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back"))
-        bot.edit_message_text("⭐ Stars:",uid,call.message.message_id,reply_markup=m); return
+        bot.edit_message_text("⭐ Stars: 🔥",uid,call.message.message_id,reply_markup=m); return
     if d=="recharge":
         m=types.InlineKeyboardMarkup(row_width=2)
         for k,(name,addr) in PAYMENTS.items(): m.add(types.InlineKeyboardButton(f"{name}",callback_data=f"pay_{k}"))
         m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back"))
-        bot.edit_message_text(f"💳 Recharge\nBalance: ${round(get_balance(uid),2)}",uid,call.message.message_id,reply_markup=m); return
+        bot.edit_message_text(f"💳 Recharge 🔥\nBalance: ${round(get_balance(uid),2)}",uid,call.message.message_id,reply_markup=m); return
     if d.startswith("pay_"):
         k=d.replace("pay_","")
         name,addr=PAYMENTS[k]
         pending_recharge[uid]=k
         bot.edit_message_text(f"{name}\n`{addr}`\n\nSend screenshot",uid,call.message.message_id,parse_mode="Markdown",reply_markup=types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("Back",callback_data="recharge")))
         return
-    if d=="invite":
-        link=f"https://t.me/{BOT_USERNAME}?start={uid}"
-        bot.send_message(uid,f"🔗 Invite Link:\n`{link}`\nNo rewards",parse_mode="Markdown"); return
     if d.startswith("buy_"):
         try:
             parts=d.split("_")
-            if parts[1]=="followers": price=FOLLOWER_COUNTS[parts[3]]; name=f"{parts[2]} {parts[3]} Followers"
-            elif parts[1]=="accounts": v=ACCOUNTS["_".join(parts[2:])]; price=v['price']; name=v['name']
-            elif parts[1]=="stars": price=STARS[parts[2]]; name=f"{parts[2]} Stars"
-            else: mp={"clean":CLEAN,"spam":SPAM,"wa":WHATSAPP,"tiktok":TIKTOK,"fb":FACEBOOK,"insta":INSTA,"tinder":TINDER}; price=mp[parts[1]][parts[2]]; name=f"{parts[1]} {parts[2]}"
+            if parts[1]=="followers":
+                price=FOLLOWER_COUNTS[parts[3]]
+                name=f"{parts[2]} {parts[3]} Followers"
+                service_type = f"رشق {parts[2]} - {parts[3]} متابع"
+            elif parts[1]=="accounts":
+                v=ACCOUNTS["_".join(parts[2:])]
+                price=v['price']; name=v['name']
+                service_type = f"حساب {v['name']}"
+            elif parts[1]=="stars":
+                price=STARS[parts[2]]; name=f"{parts[2]} Stars"
+                service_type = f"نجوم {parts[2]}"
+            elif parts[1]=="boosts":
+                count=parts[2]; info=BOOSTS[count]
+                price=info['price']; name=f"{count} Boosts"
+                service_type = f"🚀 تعزيزات - {count} ({info['points']} نقطة)"
+            else:
+                mp={"clean":CLEAN,"spam":SPAM,"tiktok":TIKTOK,"fb":FACEBOOK,"insta":INSTA,"tinder":TINDER}
+                price=mp[parts[1]][parts[2]]; name=f"{parts[1]} {parts[2]}"
+                service_type = f"رقم {parts[1]} - {parts[2]}"
             if get_balance(uid)<price:
-                bot.answer_callback_query(call.id,f"Need ${price} - You have ${round(get_balance(uid),2)}",show_alert=True)
-                return
+                bot.answer_callback_query(call.id,f"Need ${price}",show_alert=True); return
             deduct_balance(uid,price)
-            pending_orders[uid]={"price":price,"name":name}
+            pending_orders[uid]={"price":price,"name":name, "service_type": service_type}
+            user_info = users_cache.get(str(uid), {})
+            username = user_info.get("username", "No username")
+            first_name = user_info.get("name", "Unknown")
+            channel_msg = f"🔥🔥🔥 عملية شراء جديدة 🔥🔥🔥\n👑 العميل: {first_name}\n🆔 ID: `{uid}`\n👤 يوزر: @{username}\n📦 الخدمة: {service_type}\n💰 السعر: ${price}\n💸 المتبقي: ${round(get_balance(uid),2)}\n🤖 @{BOT_USERNAME}"
+            send_channel_notify(channel_msg)
             m=types.InlineKeyboardMarkup(row_width=2)
             m.add(types.InlineKeyboardButton("✅ Accept",callback_data=f"accept_{uid}"),types.InlineKeyboardButton("❌ Reject",callback_data=f"reject_{uid}"))
             for admin_id in admins_list:
-                try: bot.send_message(admin_id,f"🔔 New Order\n👤 {uid}\n📦 {name}\n💰 ${price}",reply_markup=m)
+                try: bot.send_message(admin_id,f"🔔 New Order 🔥\n👤 {uid} @{username}\n📦 {service_type}\n💰 ${price}",reply_markup=m)
                 except: pass
-            bot.edit_message_text(f"✅ Order sent: {name} ${price}\nWaiting admin",uid,call.message.message_id,reply_markup=main_menu(uid))
+            bot.edit_message_text(f"✅🔥 Order sent: {service_type} ${price}",uid,call.message.message_id,reply_markup=main_menu(uid))
         except Exception as e: print(e)
 
 @bot.message_handler(content_types=['photo','document','text'])
@@ -330,21 +359,15 @@ def all_msg(msg):
             try:
                 target=int(txt)
                 if target not in admins_list:
-                    admins_list.append(target)
-                    save_admins()
-                    bot.send_message(uid,f"✅ Added mod {target}",reply_markup=admin_menu())
-                    try: bot.send_message(target,"👑 You are now mod!")
-                    except: pass
+                    admins_list.append(target); save_admins()
                 del admin_states[uid]
             except: bot.send_message(uid,"Wrong ID")
             return
         if state=="await_ban":
             try:
                 target=int(txt)
-                if target!=ADMIN_ID and target not in banned_users:
-                    banned_users.append(target)
-                    save_banned()
-                    bot.send_message(uid,f"🚫 Banned {target}",reply_markup=admin_menu())
+                if target not in banned_users:
+                    banned_users.append(target); save_banned()
                 del admin_states[uid]
             except: bot.send_message(uid,"Wrong ID")
             return
@@ -352,9 +375,7 @@ def all_msg(msg):
             try:
                 target=int(txt)
                 if target in banned_users:
-                    banned_users.remove(target)
-                    save_banned()
-                    bot.send_message(uid,f"🔓 Unbanned {target}",reply_markup=admin_menu())
+                    banned_users.remove(target); save_banned()
                 del admin_states[uid]
             except: bot.send_message(uid,"Wrong ID")
             return
@@ -367,52 +388,45 @@ def all_msg(msg):
             return
         if state.startswith("await_amount_"):
             try:
-                target=int(state.split("_")[-1])
-                amt=float(txt)
+                target=int(state.split("_")[-1]); amt=float(txt)
                 new_bal=add_balance(target,amt)
-                bot.send_message(uid,f"Added ${amt} to {target} New: ${round(new_bal,2)}",reply_markup=admin_menu())
-                try: bot.send_message(target,f"✅ Recharged ${amt} New: ${round(new_bal,2)}")
+                bot.send_message(uid,f"Added ${amt} to {target}",reply_markup=admin_menu())
+                try: bot.send_message(target,f"✅ Recharged ${amt}")
                 except: pass
-                pending_recharge.pop(target,None)
-                del admin_states[uid]
+                pending_recharge.pop(target,None); del admin_states[uid]
             except: bot.send_message(uid,"Wrong amount")
             return
         if state.startswith("await_reply_"):
             try:
-                target=int(state.split("_")[-1])
-                info=pending_orders.get(target,{})
+                target=int(state.split("_")[-1]); info=pending_orders.get(target,{})
                 bot.send_message(target,f"✅ Delivered {info.get('name')}\n\n{txt}")
                 bot.send_message(uid,f"Sent to {target}",reply_markup=admin_menu())
-                pending_orders.pop(target,None)
-                del admin_states[uid]
+                pending_orders.pop(target,None); del admin_states[uid]
             except: pass
             return
     if is_admin(uid) and uid in broadcast_mode:
         if txt=="/cancel":
             del broadcast_mode[uid]
-            bot.send_message(uid,"Cancelled",reply_markup=admin_menu())
-            return
+            bot.send_message(uid,"Cancelled",reply_markup=admin_menu()); return
         c=0
         for u in list(users_cache.keys()):
             try: bot.copy_message(int(u),uid,msg.message_id); c+=1
             except: pass
         bot.send_message(uid,f"Broadcast to {c}",reply_markup=admin_menu())
-        del broadcast_mode[uid]
-        return
+        del broadcast_mode[uid]; return
     if uid in pending_recharge:
         m=types.InlineKeyboardMarkup(row_width=2)
         m.add(types.InlineKeyboardButton("✅ Accept",callback_data=f"accept_re_{uid}"),types.InlineKeyboardButton("❌ Reject",callback_data=f"reject_re_{uid}"))
         for admin_id in admins_list:
-            try: bot.forward_message(admin_id,uid,msg.message_id); bot.send_message(admin_id,f"Recharge {uid} {pending_recharge[uid]}",reply_markup=m)
+            try: bot.forward_message(admin_id,uid,msg.message_id); bot.send_message(admin_id,f"Recharge {uid}",reply_markup=m)
             except: pass
-        bot.send_message(uid,"✅ Received - Waiting admin")
-        return
+        bot.send_message(uid,"✅ Received - Waiting admin"); return
     if uid in pending_orders and not is_admin(uid):
         for admin_id in admins_list:
             try: bot.forward_message(admin_id,uid,msg.message_id)
             except: pass
 
-print("V51 ULTIMATE - ALL FEATURES LIGHT")
+print("V53 - 5 Boosts = 0.25$ 🔥")
 bot.delete_webhook(drop_pending_updates=True)
 time.sleep(1)
 bot.infinity_polling(none_stop=True, timeout=20, long_polling_timeout=20, skip_pending=True)
