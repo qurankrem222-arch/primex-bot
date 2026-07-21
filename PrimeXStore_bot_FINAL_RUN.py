@@ -5,7 +5,7 @@ import json, os, time
 TOKEN = "8315190785:AAFNCBRiF1eimUpePthW2Om1s2F2eC_f8kg"
 ADMIN_ID = 8933825471
 BOT_USERNAME = "PrimeXStore00bot"
-FORCE_CHANNELS = ["@PrimeXStore0", "@PrimeXStore00", "@kingfreebots"]
+FORCE_CHANNELS = ["@PrimeXStore0", "@PrimeXStore00", "@kingfreebots", "@badel22"]
 NOTIFY_CHANNEL = "@PrimeXStore0"
 FACEBOOK_PAGE = "https://www.facebook.com/profile.php?id=61592294575700"
 SUPPORT = "@PrimeXStore22"
@@ -92,14 +92,7 @@ FACEBOOK = {"indonesia":0.1,"sudan":0.1,"ghana":0.15}
 INSTA = {"ghana":0.15}
 TINDER = {"indonesia":0.07,"mozambique":0.09}
 
-# السعر الجديد - كل 5 تعزيزات = 0.25$
-BOOSTS = {
-    "5": {"price": 0.25, "points": 20},
-    "10": {"price": 0.50, "points": 40},
-    "25": {"price": 1.25, "points": 100},
-    "50": {"price": 2.50, "points": 200},
-    "100": {"price": 5.00, "points": 400},
-}
+BOOSTS = {"5": 0.25, "10": 0.50, "25": 1.25, "50": 2.50, "100": 5.00}
 
 FOLLOWER_COUNTS = {"10":0.09,"20":0.18,"50":0.45,"100":0.9,"200":1.8,"300":2.7,"400":3.6,"500":4.5}
 ACCOUNTS = {"tiktok_1300":{"name":"TikTok 1300 Followers","price":1.5},"tiktok_2200":{"name":"TikTok 2200 Followers","price":2.0}}
@@ -164,8 +157,11 @@ def followers_counts_menu(platform):
 
 def boosts_menu():
     m=types.InlineKeyboardMarkup(row_width=2)
-    for count,info in BOOSTS.items():
-        m.add(types.InlineKeyboardButton(f"🚀 {count} Boosts • ${info['price']} ({info['points']} pts)",callback_data=f"buy_boosts_{count}"))
+    m.add(types.InlineKeyboardButton(f"🚀 5 Boosts • $0.25",callback_data="buy_boosts_5"))
+    m.add(types.InlineKeyboardButton(f"🚀 10 Boosts • $0.50",callback_data="buy_boosts_10"))
+    m.add(types.InlineKeyboardButton(f"🚀 25 Boosts • $1.25",callback_data="buy_boosts_25"))
+    m.add(types.InlineKeyboardButton(f"🚀 50 Boosts • $2.50",callback_data="buy_boosts_50"))
+    m.add(types.InlineKeyboardButton(f"🚀 100 Boosts • $5.00",callback_data="buy_boosts_100"))
     m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back"))
     return m
 
@@ -190,7 +186,7 @@ WELCOME = """
 🚀🔥 خدماتنا النارية 🔥🚀
 📱 أرقام نارية
 👥 رشق متابعين بـ نار 🔥
-🚀 تعزيزات - 5 تعزيزات = $0.25 🔥
+🚀 تعزيزات - 5 = $0.25 🔥
 
 👇🔥 اختار خدمتك النارية يا ملك 🔥👇
 """
@@ -201,18 +197,24 @@ def start(msg):
     if is_banned(uid):
         bot.send_message(uid,"🚫 You are banned ❌")
         return
+    is_new = str(uid) not in users_cache
+    if is_new and uid!= ADMIN_ID:
+        for admin_id in admins_list:
+            try:
+                bot.send_message(admin_id, f"🔔 New User Joined 🔥\n👤 {msg.from_user.first_name}\n🆔 {uid}\n@{msg.from_user.username}\nTotal: {len(users_cache)+1}", parse_mode="Markdown")
+            except: pass
     users_cache[str(uid)]={"name":msg.from_user.first_name,"username":msg.from_user.username}
     save_users()
     if is_admin(uid):
-        bot.send_message(uid,"👑 Admin Panel V53 FIRE 0.25$ 🔥",reply_markup=admin_menu())
+        bot.send_message(uid,"👑 Admin Panel V56 FINAL FULL 🔥",reply_markup=admin_menu())
         return
     ok,nj=check_sub(uid)
     if not ok:
         m=types.InlineKeyboardMarkup(row_width=1)
-        for ch in nj: m.add(types.InlineKeyboardButton(f"📢 {ch} - Join 🔥",url=f"https://t.me/{ch.replace('@','')}"))
+        for ch in nj: m.add(types.InlineKeyboardButton(f"📢 {ch}",url=f"https://t.me/{ch.replace('@','')}"))
         m.add(types.InlineKeyboardButton("📘 Facebook Page",url=FACEBOOK_PAGE))
         m.add(types.InlineKeyboardButton("✅ Done 🔥",callback_data="check"))
-        bot.send_message(uid,"⚠️🔥 Must Subscribe First",reply_markup=m)
+        bot.send_message(uid,"⚠️🔥 Must Subscribe First 👇\n\nJoin all channels to continue:",reply_markup=m)
         return
     bot.send_message(uid,WELCOME.format(bal=round(get_balance(uid),2),uid=uid),reply_markup=main_menu(uid))
 
@@ -291,7 +293,7 @@ def cb(call):
         bot.edit_message_text(f"👥 {platform.upper()} - Counts: 🔥",uid,call.message.message_id,reply_markup=followers_counts_menu(platform))
         return
     if d=="boosts_main":
-        bot.edit_message_text("🚀🔥 تعزيزات القنوات 🔥🚀\n💎 كل 5 = $0.25 - أرخص سعر 🔥\n⚡ تفعيل فوري",uid,call.message.message_id,reply_markup=boosts_menu())
+        bot.edit_message_text("🚀🔥 Channel Boosts 🔥🚀\n💎 5 Boosts = $0.25",uid,call.message.message_id,reply_markup=boosts_menu())
         return
     if d=="accounts_main": bot.edit_message_text("👤 Accounts: 🔥",uid,call.message.message_id,reply_markup=accounts_menu()); return
     if d=="stars":
@@ -316,22 +318,22 @@ def cb(call):
             if parts[1]=="followers":
                 price=FOLLOWER_COUNTS[parts[3]]
                 name=f"{parts[2]} {parts[3]} Followers"
-                service_type = f"رشق {parts[2]} - {parts[3]} متابع"
+                service_type = f"{parts[2]} {parts[3]}"
             elif parts[1]=="accounts":
                 v=ACCOUNTS["_".join(parts[2:])]
                 price=v['price']; name=v['name']
-                service_type = f"حساب {v['name']}"
+                service_type = f"{v['name']}"
             elif parts[1]=="stars":
                 price=STARS[parts[2]]; name=f"{parts[2]} Stars"
-                service_type = f"نجوم {parts[2]}"
+                service_type = f"{parts[2]} Stars"
             elif parts[1]=="boosts":
-                count=parts[2]; info=BOOSTS[count]
-                price=info['price']; name=f"{count} Boosts"
-                service_type = f"🚀 تعزيزات - {count} ({info['points']} نقطة)"
+                count=parts[2]; price=BOOSTS[count]
+                name=f"{count} Boosts"
+                service_type = f"{count} Boosts"
             else:
                 mp={"clean":CLEAN,"spam":SPAM,"tiktok":TIKTOK,"fb":FACEBOOK,"insta":INSTA,"tinder":TINDER}
                 price=mp[parts[1]][parts[2]]; name=f"{parts[1]} {parts[2]}"
-                service_type = f"رقم {parts[1]} - {parts[2]}"
+                service_type = f"{parts[1]} {parts[2]}"
             if get_balance(uid)<price:
                 bot.answer_callback_query(call.id,f"Need ${price}",show_alert=True); return
             deduct_balance(uid,price)
@@ -339,14 +341,15 @@ def cb(call):
             user_info = users_cache.get(str(uid), {})
             username = user_info.get("username", "No username")
             first_name = user_info.get("name", "Unknown")
-            channel_msg = f"🔥🔥🔥 عملية شراء جديدة 🔥🔥🔥\n👑 العميل: {first_name}\n🆔 ID: `{uid}`\n👤 يوزر: @{username}\n📦 الخدمة: {service_type}\n💰 السعر: ${price}\n💸 المتبقي: ${round(get_balance(uid),2)}\n🤖 @{BOT_USERNAME}"
+            # إشعار القناة - الشكل 3 الاحترافي بدون رصيد
+            channel_msg = f"💳 NEW ORDER\n━━━━━━━━━━━━━━\n👤 Customer: {first_name}\n🆔 ID: {uid}\n📦 Service: {service_type}\n💰 Price: ${price}\n🤖 Bot: @{BOT_USERNAME}\n━━━━━━━━━━━━━━"
             send_channel_notify(channel_msg)
             m=types.InlineKeyboardMarkup(row_width=2)
             m.add(types.InlineKeyboardButton("✅ Accept",callback_data=f"accept_{uid}"),types.InlineKeyboardButton("❌ Reject",callback_data=f"reject_{uid}"))
             for admin_id in admins_list:
-                try: bot.send_message(admin_id,f"🔔 New Order 🔥\n👤 {uid} @{username}\n📦 {service_type}\n💰 ${price}",reply_markup=m)
+                try: bot.send_message(admin_id,f"🔔 New Order 🔥\n👤 {uid} @{username}\n📦 {service_type} - ${price}",reply_markup=m)
                 except: pass
-            bot.edit_message_text(f"✅🔥 Order sent: {service_type} ${price}",uid,call.message.message_id,reply_markup=main_menu(uid))
+            bot.edit_message_text(f"✅🔥 Order: {service_type} ${price}",uid,call.message.message_id,reply_markup=main_menu(uid))
         except Exception as e: print(e)
 
 @bot.message_handler(content_types=['photo','document','text'])
@@ -426,7 +429,7 @@ def all_msg(msg):
             try: bot.forward_message(admin_id,uid,msg.message_id)
             except: pass
 
-print("V53 - 5 Boosts = 0.25$ 🔥")
+print("V56 FULL FINAL - 4 Channels + FB + New User Notify + Order Notify Style 3 + Boosts 0.25$ 🔥")
 bot.delete_webhook(drop_pending_updates=True)
 time.sleep(1)
 bot.infinity_polling(none_stop=True, timeout=20, long_polling_timeout=20, skip_pending=True)
