@@ -1,257 +1,323 @@
 import telebot
 from telebot import types
 import json, os, time
-from datetime import datetime
 
-# ===== التوكن الجديد =====
 TOKEN = "8315190785:AAFNCBRiF1eimUpePthW2Om1s2F2eC_f8kg"
 ADMIN_ID = 8933825471
+FORCE_CHANNELS = ["@PrimeXStore0", "@adscahneel", "@kingfreebots", "@PrimeXStore00"]
+SUPPORT = "@PrimeXStore22"
+ADS = "@adscahneel"
 
-FORCE_CHANNELS = ["@PrimeXStore0", "@adscahneel", "@kingfreebots"]
-DELIVERY_CHANNEL_ID = -1004496209902
-SUPPORT_USERNAME = "@PrimeXStore22"
-ADS_USERNAME = "@adscahneel"
-ADS_LINK = "https://t.me/adscahneel"
+bot = telebot.TeleBot(TOKEN, threaded=True, num_threads=8)
 
-bot = telebot.TeleBot(TOKEN, threaded=False)
+balance_cache = {}
+users_cache = {}
+sub_cache = {}
 pending_orders = {}
 pending_recharge = {}
 broadcast_mode = {}
 admin_states = {}
 
-CLEAN = {
-    "india": {"name": "🇮🇳 India Clean", "price": 0.3},
-    "egypt": {"name": "🇪🇬 Egypt Clean", "price": 0.5},
-    "vietnam": {"name": "🇻🇳 Vietnam Clean", "price": 0.9},
-    "ksa": {"name": "🇸🇦 Saudi Clean", "price": 1.5},
-    "pakistan": {"name": "🇵🇰 Pakistan Clean", "price": 0.7},
-    "morocco": {"name": "🇲🇦 Morocco Clean", "price": 0.6},
-    "myanmar": {"name": "🇲🇲 Myanmar Clean", "price": 0.3},
-    "kenya": {"name": "🇰🇪 Kenya Clean", "price": 0.5},
-    "indonesia": {"name": "🇮🇩 Indonesia Clean", "price": 0.6},
-    "nigeria": {"name": "🇳🇬 Nigeria Clean", "price": 0.5},
-}
-SPAM = {
-    "india_spam": {"name": "🇮🇳 India Spam", "price": 0.2},
-    "random": {"name": "🌍 Random Spam", "price": 0.3},
-    "random_rare": {"name": "🌍 Rare Spam", "price": 0.45},
-    "usa": {"name": "🇺🇸 USA Spam", "price": 0.25},
-    "myanmar_spam": {"name": "🇲🇲 Myanmar Spam", "price": 0.2},
-}
-WHATSAPP = {"indonesia": {"name": "💚 WhatsApp Indonesia", "price": 0.25}}
-TIKTOK_NUMS = {"germany": {"name": "🇩🇪 TikTok Germany", "price": 0.2}, "sudan": {"name": "🇸🇩 TikTok Sudan", "price": 0.15}}
-FACEBOOK_NUMS = {"indonesia": {"name": "🇮🇩 FB Indonesia", "price": 0.1}, "sudan": {"name": "🇸🇩 FB Sudan", "price": 0.1}, "ghana": {"name": "🇬🇭 FB Ghana", "price": 0.15}}
-INSTAGRAM_NUMS = {"ghana": {"name": "🇬🇭 Insta Ghana", "price": 0.15}}
-TINDER_NUMS = {"indonesia": {"name": "🇮🇩 Tinder Indonesia", "price": 0.07}, "mozambique": {"name": "🇲🇿 Tinder Mozambique", "price": 0.09}}
-FOLLOWERS = {"tiktok": {"name": "🎵 TikTok Followers", "price": 3.5}, "instagram": {"name": "📸 Instagram", "price": 4.0}, "facebook": {"name": "👤 Facebook", "price": 3.0}, "youtube": {"name": "▶️ YouTube", "price": 5.0}, "telegram": {"name": "📩 Telegram", "price": 2.5}}
-STARS = {"15": {"name": "🧸 15 Stars", "price": 0.18}, "25": {"name": "🌹 25 Stars", "price": 0.29}, "50": {"name": "🎂 50 Stars", "price": 0.57}, "100": {"name": "💍 100 Stars", "price": 1.15}}
-PAYMENTS = {
-    "cwallet": {"name": "👛 C-Wallet", "info": "`61824874`"},
-    "usdt_trc20": {"name": "❤️ USDT TRC20", "info": "`TRHUB8kuMpdCoDzST6c4AJ4cJdk6tToz97`"},
-    "usdt_bep20": {"name": "💛 USDT BEP20", "info": "`0xA7fE0a5Ae6Adcd5b47df238F836449b4d0866155`"},
-    "usdt_erc20": {"name": "💎 USDT ERC20", "info": "`0x8D7dDE7719e9d6D3e5175CE170Fae00372715493`"},
-    "usdt_polygon": {"name": "💜 POLYGON", "info": "`0xA7fE0a5Ae6Adcd5b47df238F836449b4d0866155`"},
-    "faucetpay": {"name": "🚰 FaucetPay", "info": "`@primexstore22`"},
-    "gram": {"name": "💎 GRAM TON", "info": "`UQBdPqUEG7TkF2TYWDOEclSYPDec4-HGOsN5ss0Zcnby1mCL`"},
-}
+if os.path.exists("balance.json"):
+    try: balance_cache = json.load(open("balance.json","r",encoding="utf-8"))
+    except: balance_cache = {}
+if os.path.exists("users.json"):
+    try: users_cache = json.load(open("users.json","r",encoding="utf-8"))
+    except: users_cache = {}
 
-BALANCE_FILE="balance.json"; USERS_FILE="users.json"; ORDERS_FILE="orders.json"; MODS_FILE="mods.json"
-for f,d in [(BALANCE_FILE,"{}"),(USERS_FILE,"{}"),(ORDERS_FILE,"[]"),(MODS_FILE,"[]")]:
-    if not os.path.exists(f): open(f,"w",encoding="utf-8").write(d)
+def save_bal():
+    try: json.dump(balance_cache, open("balance.json","w",encoding="utf-8"))
+    except: pass
+def save_users():
+    try: json.dump(users_cache, open("users.json","w",encoding="utf-8"))
+    except: pass
+def get_balance(uid): return float(balance_cache.get(str(uid),0))
+def add_balance(uid,amt):
+    balance_cache[str(uid)] = float(balance_cache.get(str(uid),0))+float(amt)
+    save_bal()
+    return balance_cache[str(uid)]
+def deduct_balance(uid,amt):
+    bal=float(balance_cache.get(str(uid),0))
+    if bal<amt: return False
+    balance_cache[str(uid)]=bal-amt
+    save_bal()
+    return True
 
-def get_balances():
-    try: return json.load(open(BALANCE_FILE,"r",encoding="utf-8"))
-    except: return {}
-def save_balances(b): json.dump(b, open(BALANCE_FILE,"w",encoding="utf-8"), ensure_ascii=False, indent=2)
-def get_balance(uid): return float(get_balances().get(str(uid),0))
-def add_balance(uid,amount):
-    b=get_balances(); b[str(uid)]=float(b.get(str(uid),0))+float(amount); save_balances(b); return b[str(uid)]
-def deduct_balance(uid,amount):
-    b=get_balances(); bal=float(b.get(str(uid),0))
-    if bal<amount: return False
-    b[str(uid)]=bal-amount; save_balances(b); return True
-def get_mods():
-    try: return json.load(open(MODS_FILE,"r",encoding="utf-8"))
-    except: return []
-def save_mods(m): json.dump(m, open(MODS_FILE,"w",encoding="utf-8"), ensure_ascii=False, indent=2)
-def is_admin(uid): return uid==ADMIN_ID or uid in get_mods()
-def get_users():
-    try: return json.load(open(USERS_FILE,"r",encoding="utf-8"))
-    except: return {}
-def save_users(u): json.dump(u, open(USERS_FILE,"w",encoding="utf-8"), ensure_ascii=False, indent=2)
-
-def check_force_sub(uid):
+def check_sub(uid):
+    if uid in sub_cache:
+        t,ok = sub_cache[uid]
+        if time.time()-t < 300: return ok,[]
     nj=[]
     for ch in FORCE_CHANNELS:
         try:
             m=bot.get_chat_member(ch,uid)
             if m.status in ['left','kicked']: nj.append(ch)
-        except: continue
-    return len(nj)==0,nj
+        except: pass
+    ok=len(nj)==0
+    sub_cache[uid]=(time.time(),ok)
+    return ok,nj
 
-def force_sub_markup(nj):
-    m=types.InlineKeyboardMarkup(row_width=1)
-    for ch in nj: m.add(types.InlineKeyboardButton(f"📢 {ch}",url=f"https://t.me/{ch.replace('@','')}"))
-    m.add(types.InlineKeyboardButton("✅ Done",callback_data="check_sub")); return m
+CLEAN = {"india":0.3,"egypt":0.5,"vietnam":0.9,"ksa":1.5,"pakistan":0.7,"morocco":0.6,"myanmar":0.3,"kenya":0.5,"indonesia":0.6,"nigeria":0.5}
+SPAM = {"india":0.2,"random":0.3,"rare":0.45,"usa":0.25,"myanmar":0.2}
+WHATSAPP = {"indonesia":0.25}
+TIKTOK = {"germany":0.2,"sudan":0.15}
+FACEBOOK = {"indonesia":0.1,"sudan":0.1,"ghana":0.15}
+INSTA = {"ghana":0.15}
+TINDER = {"indonesia":0.07,"mozambique":0.09}
 
-def admin_main_menu():
+FOLLOWER_COUNTS = {"10":0.09,"20":0.18,"50":0.45,"100":0.9,"200":1.8,"300":2.7,"400":3.6,"500":4.5}
+FOLLOWER_PLATFORMS = ["tiktok","instagram","facebook","youtube","telegram"]
+
+STARS = {"15":0.18,"25":0.29,"50":0.57,"100":1.15}
+PAYMENTS = {
+    "cwallet": ("👛 C-Wallet","61824874"),
+    "trc20": ("❤️ USDT TRC20","TRHUB8kuMpdCoDzST6c4AJ4cJdk6tToz97"),
+    "bep20": ("💛 USDT BEP20","0xA7fE0a5Ae6Adcd5b47df238F836449b4d0866155"),
+    "erc20": ("💎 USDT ERC20","0x8D7dDE7719e9d6D3e5175CE170Fae00372715493"),
+    "polygon": ("💜 POLYGON","0xA7fE0a5Ae6Adcd5b47df238F836449b4d0866155"),
+    "faucetpay": ("🚰 FaucetPay","@primexstore22"),
+    "gram": ("💎 GRAM TON","UQBdPqUEG7TkF2TYWDOEclSYPDec4-HGOsN5ss0Zcnby1mCL"),
+}
+
+def admin_menu():
     m=types.InlineKeyboardMarkup(row_width=2)
-    m.add(types.InlineKeyboardButton("📊 احصائيات",callback_data="admin_stats"),types.InlineKeyboardButton("💰 اضافة رصيد",callback_data="admin_add_balance"))
-    m.add(types.InlineKeyboardButton("📢 اذاعة",callback_data="admin_broadcast_info"),types.InlineKeyboardButton("👮 اضافة مشرف",callback_data="admin_add_mod"))
-    m.add(types.InlineKeyboardButton("📋 المشرفين",callback_data="admin_list_mods"),types.InlineKeyboardButton("🗑️ حذف مشرف",callback_data="admin_del_mod"))
-    m.add(types.InlineKeyboardButton("📦 المخزون",callback_data="admin_stock"),types.InlineKeyboardButton("👥 وضع العميل",callback_data="admin_view_as_user"))
+    m.add(types.InlineKeyboardButton("📊 احصائيات",callback_data="admin_stats"),types.InlineKeyboardButton("💰 اضافة رصيد",callback_data="admin_add"))
+    m.add(types.InlineKeyboardButton("📢 اذاعة",callback_data="admin_bc"),types.InlineKeyboardButton("👥 وضع العميل",callback_data="admin_user"))
     return m
 
-def main_menu(uid=None):
-    bal=get_balance(uid) if uid else 0
+def main_menu(uid):
+    bal=get_balance(uid)
     m=types.InlineKeyboardMarkup(row_width=2)
-    m.add(types.InlineKeyboardButton(f"💰 ${round(bal,2)}",callback_data="my_balance"),types.InlineKeyboardButton("🛒 Numbers",callback_data="buy_numbers"))
-    m.add(types.InlineKeyboardButton("👥 Followers",callback_data="buy_followers"),types.InlineKeyboardButton("⭐ Stars",callback_data="buy_stars"))
-    m.add(types.InlineKeyboardButton("💳 Recharge",callback_data="recharge"),types.InlineKeyboardButton(f"📢 {ADS_USERNAME}",url=ADS_LINK))
+    m.add(types.InlineKeyboardButton(f"💰 ${round(bal,2)}",callback_data="bal"),types.InlineKeyboardButton("🛒 Numbers",callback_data="nums"))
+    m.add(types.InlineKeyboardButton("👥 Followers 10=$0.09",callback_data="followers_main"),types.InlineKeyboardButton("⭐ Stars",callback_data="stars"))
+    m.add(types.InlineKeyboardButton("💳 Recharge",callback_data="recharge"),types.InlineKeyboardButton(f"📢 {ADS}",url=f"https://t.me/{ADS.replace('@','')}"))
+    m.add(types.InlineKeyboardButton(f"💬 {SUPPORT}",url=f"https://t.me/{SUPPORT.replace('@','')}"))
     return m
 
-def recharge_menu():
+def nums_menu():
     m=types.InlineKeyboardMarkup(row_width=2)
-    for k,v in PAYMENTS.items(): m.add(types.InlineKeyboardButton(v['name'],callback_data=f"pay_{k}"))
-    m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back_main")); return m
+    m.add(types.InlineKeyboardButton("✨ Clean",callback_data="clean"),types.InlineKeyboardButton("🔥 Spam",callback_data="spam"))
+    m.add(types.InlineKeyboardButton("💚 WhatsApp",callback_data="wa"),types.InlineKeyboardButton("🎵 TikTok",callback_data="tiktok"))
+    m.add(types.InlineKeyboardButton("👤 Facebook",callback_data="fb"),types.InlineKeyboardButton("📸 Instagram",callback_data="insta"))
+    m.add(types.InlineKeyboardButton("🔥 Tinder",callback_data="tinder"))
+    m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back"))
+    return m
 
-def numbers_menu():
+def build_nums(data, prefix):
     m=types.InlineKeyboardMarkup(row_width=2)
-    m.add(types.InlineKeyboardButton("✨ Clean",callback_data="type_clean"),types.InlineKeyboardButton("🔥 Spam",callback_data="type_spam"))
-    m.add(types.InlineKeyboardButton("💚 WhatsApp",callback_data="type_whatsapp"),types.InlineKeyboardButton("🎵 TikTok",callback_data="type_tiktok_nums"))
-    m.add(types.InlineKeyboardButton("👤 Facebook",callback_data="type_facebook_nums"),types.InlineKeyboardButton("📸 Instagram",callback_data="type_insta_nums"))
-    m.add(types.InlineKeyboardButton("🔥 Tinder",callback_data="type_tinder_nums"))
-    m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back_main")); return m
+    for k,price in data.items():
+        m.add(types.InlineKeyboardButton(f"{k} ${price}",callback_data=f"buy_{prefix}_{k}"))
+    m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="nums"))
+    return m
 
-def simple_menu(data, prefix):
+def followers_platforms_menu():
     m=types.InlineKeyboardMarkup(row_width=2)
-    for k,v in data.items(): m.add(types.InlineKeyboardButton(f"{v['name']} ${v['price']}",callback_data=f"{prefix}_{k}"))
-    m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="buy_numbers")); return m
+    m.add(types.InlineKeyboardButton("🎵 TikTok",callback_data="fp_tiktok"),types.InlineKeyboardButton("📸 Instagram",callback_data="fp_instagram"))
+    m.add(types.InlineKeyboardButton("👤 Facebook",callback_data="fp_facebook"),types.InlineKeyboardButton("▶️ YouTube",callback_data="fp_youtube"))
+    m.add(types.InlineKeyboardButton("📩 Telegram",callback_data="fp_telegram"))
+    m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back"))
+    return m
+
+def followers_counts_menu(platform):
+    m=types.InlineKeyboardMarkup(row_width=2)
+    for count,price in FOLLOWER_COUNTS.items():
+        m.add(types.InlineKeyboardButton(f"{count} Followers ${price}",callback_data=f"buy_followers_{platform}_{count}"))
+    m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="followers_main"))
+    return m
 
 @bot.message_handler(commands=['start'])
 def start(msg):
-    users=get_users(); users[str(msg.chat.id)]={"name":msg.chat.first_name,"username":msg.chat.username,"date":datetime.now().strftime("%Y-%m-%d %H:%M")}; save_users(users)
-    if is_admin(msg.chat.id):
-        bot.send_message(msg.chat.id,"👑 لوحة تحكم الملك",reply_markup=admin_main_menu()); return
-    ok,nj=check_force_sub(msg.chat.id)
-    if not ok: bot.send_message(msg.chat.id,"⚠️ Please subscribe:",reply_markup=force_sub_markup(nj)); return
-    bot.send_message(msg.chat.id,f"👑 PrimeX Store\nBalance: ${round(get_balance(msg.chat.id),2)}",reply_markup=main_menu(msg.chat.id))
+    uid=msg.chat.id
+    users_cache[str(uid)]={"name":msg.chat.first_name,"username":msg.chat.username}
+    save_users()
+    if uid==ADMIN_ID:
+        bot.send_message(uid,"👑 لوحة الملك - متابعين 10=$0.09 لحد 500 ✅\n4 قنوات اشتراك ✅",reply_markup=admin_menu())
+        return
+    ok,nj=check_sub(uid)
+    if not ok:
+        m=types.InlineKeyboardMarkup(row_width=1)
+        for ch in nj: m.add(types.InlineKeyboardButton(f"📢 {ch}",url=f"https://t.me/{ch.replace('@','')}"))
+        m.add(types.InlineKeyboardButton("✅ Done",callback_data="check"))
+        bot.send_message(uid,"⚠️ Subscribe to all channels:",reply_markup=m)
+        return
+    bot.send_message(uid,f"👑 PrimeX Store\nBalance: ${round(get_balance(uid),2)}\n\n👥 Followers: 10 = $0.09 to 500",reply_markup=main_menu(uid))
 
 @bot.callback_query_handler(func=lambda c: True)
 def cb(call):
     uid=call.message.chat.id
-    if call.data=="check_sub":
-        ok,_=check_force_sub(uid)
-        if not ok: bot.answer_callback_query(call.id,"Not yet!"); return
-        bot.send_message(uid,"✅ Done",reply_markup=main_menu(uid)); return
-    if not is_admin(uid):
-        ok,_=check_force_sub(uid)
-        if not ok: bot.answer_callback_query(call.id,"Subscribe first!"); return
-    if call.data=="admin_stats" and is_admin(uid):
-        bals=get_balances(); total=sum(float(v) for v in bals.values()); users=get_users()
-        bot.edit_message_text(f"📊 احصائيات\n💰 ${round(total,2)}\n👥 {len(users)}\n⏳ {len(pending_orders)}",uid,call.message.message_id,reply_markup=admin_main_menu())
-    elif call.data=="admin_add_balance" and is_admin(uid):
-        admin_states[uid]={"step":"await_id"}; bot.edit_message_text("💰 اضافة رصيد\n\n📩 ابعت ايدي العميل:",uid,call.message.message_id,reply_markup=types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("❌ الغاء",callback_data="admin_cancel")))
-    elif call.data=="admin_broadcast_info" and is_admin(uid):
-        broadcast_mode[uid]=True; bot.edit_message_text("📢 ابعت رسالة الاذاعة:",uid,call.message.message_id,reply_markup=types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("❌ الغاء",callback_data="admin_cancel")))
-    elif call.data=="admin_cancel":
-        if uid in broadcast_mode: del broadcast_mode[uid]
-        if uid in admin_states: del admin_states[uid]
-        bot.edit_message_text("تم الالغاء",uid,call.message.message_id,reply_markup=admin_main_menu() if is_admin(uid) else main_menu(uid))
-    elif call.data=="admin_stock" and is_admin(uid):
-        bot.edit_message_text("📦 المخزون\nClean 10 + Spam 5 + WA 1 + TikTok 2 + FB 3 + Insta 1 + Tinder 2",uid,call.message.message_id,reply_markup=admin_main_menu())
-    elif call.data=="admin_view_as_user" and is_admin(uid):
-        bot.send_message(uid,"User View:",reply_markup=main_menu(uid))
-    elif call.data=="my_balance": bot.edit_message_text(f"💰 ${round(get_balance(uid),2)}",uid,call.message.message_id,reply_markup=main_menu(uid))
-    elif call.data=="recharge": bot.edit_message_text(f"💳 Recharge - ${round(get_balance(uid),2)}",uid,call.message.message_id,reply_markup=recharge_menu())
-    elif call.data.startswith("pay_"):
-        method=call.data.replace("pay_","",1); info=PAYMENTS.get(method); pending_recharge[uid]={"method":method}
-        bot.edit_message_text(f"{info['name']}\n{info['info']}\n\n📸 Send screenshot",uid,call.message.message_id,parse_mode="Markdown",reply_markup=types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("⬅️ Back",callback_data="recharge")))
-    elif call.data=="back_main": bot.edit_message_text(f"💰 ${round(get_balance(uid),2)}",uid,call.message.message_id,reply_markup=main_menu(uid))
-    elif call.data=="buy_numbers": bot.edit_message_text("🛒 Choose:",uid,call.message.message_id,reply_markup=numbers_menu())
-    elif call.data=="type_clean": bot.edit_message_text("✨ Clean:",uid,call.message.message_id,reply_markup=simple_menu(CLEAN,"clean"))
-    elif call.data=="type_spam": bot.edit_message_text("🔥 Spam:",uid,call.message.message_id,reply_markup=simple_menu(SPAM,"spam"))
-    elif call.data=="type_whatsapp": bot.edit_message_text("💚 WhatsApp:",uid,call.message.message_id,reply_markup=simple_menu(WHATSAPP,"wa"))
-    elif call.data=="type_tiktok_nums": bot.edit_message_text("🎵 TikTok:",uid,call.message.message_id,reply_markup=simple_menu(TIKTOK_NUMS,"tiktokn"))
-    elif call.data=="type_facebook_nums": bot.edit_message_text("👤 Facebook:",uid,call.message.message_id,reply_markup=simple_menu(FACEBOOK_NUMS,"fbn"))
-    elif call.data=="type_insta_nums": bot.edit_message_text("📸 Instagram:",uid,call.message.message_id,reply_markup=simple_menu(INSTAGRAM_NUMS,"instan"))
-    elif call.data=="type_tinder_nums": bot.edit_message_text("🔥 Tinder:",uid,call.message.message_id,reply_markup=simple_menu(TINDER_NUMS,"tindern"))
-    elif call.data=="buy_followers":
-        m=types.InlineKeyboardMarkup(row_width=2)
-        for k,v in FOLLOWERS.items(): m.add(types.InlineKeyboardButton(f"{v['name']} ${v['price']}",callback_data=f"followers_{k}"))
-        m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back_main"))
-        bot.edit_message_text("👥 Followers:",uid,call.message.message_id,reply_markup=m)
-    elif call.data=="buy_stars":
-        m=types.InlineKeyboardMarkup(row_width=2)
-        for k,v in STARS.items(): m.add(types.InlineKeyboardButton(f"{v['name']} ${v['price']}",callback_data=f"stars_{k}"))
-        m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back_main"))
-        bot.edit_message_text("⭐ Stars:",uid,call.message.message_id,reply_markup=m)
-    elif call.data.startswith(("clean_","spam_","wa_","tiktokn_","fbn_","instan_","tindern_","followers_","stars_")):
-        price=0; name=""
-        if call.data.startswith("clean_"): k=call.data.replace("clean_","",1); info=CLEAN[k]; price=info["price"]; name=info["name"]
-        elif call.data.startswith("spam_"): k=call.data.replace("spam_","",1); info=SPAM[k]; price=info["price"]; name=info["name"]
-        elif call.data.startswith("wa_"): k=call.data.replace("wa_","",1); info=WHATSAPP[k]; price=info["price"]; name=info["name"]
-        elif call.data.startswith("tiktokn_"): k=call.data.replace("tiktokn_","",1); info=TIKTOK_NUMS[k]; price=info["price"]; name=info["name"]
-        elif call.data.startswith("fbn_"): k=call.data.replace("fbn_","",1); info=FACEBOOK_NUMS[k]; price=info["price"]; name=info["name"]
-        elif call.data.startswith("instan_"): k=call.data.replace("instan_","",1); info=INSTAGRAM_NUMS[k]; price=info["price"]; name=info["name"]
-        elif call.data.startswith("tindern_"): k=call.data.replace("tindern_","",1); info=TINDER_NUMS[k]; price=info["price"]; name=info["name"]
-        elif call.data.startswith("followers_"): k=call.data.replace("followers_","",1); info=FOLLOWERS[k]; price=info["price"]; name=info["name"]
-        elif call.data.startswith("stars_"): k=call.data.replace("stars_","",1); info=STARS[k]; price=info["price"]; name=info["name"]
-        if get_balance(uid)<price: bot.answer_callback_query(call.id,f"Need ${price}"); return
-        deduct_balance(uid,price); pending_orders[uid]={"price":price,"name":name}
-        markup=types.InlineKeyboardMarkup(row_width=2); markup.add(types.InlineKeyboardButton("✅ Accept",callback_data=f"accept_{uid}"),types.InlineKeyboardButton("❌ Reject+Refund",callback_data=f"reject_refund_{uid}"))
-        bot.send_message(ADMIN_ID,f"🔔 New Order\n👤 {uid}\n📦 {name} - ${price}",reply_markup=markup)
-        bot.edit_message_text(f"✅ Deducted ${price}\n⏳ Waiting admin",uid,call.message.message_id,reply_markup=main_menu(uid))
-    elif call.data.startswith("accept_"):
-        if not is_admin(uid): return
-        if call.data.startswith("accept_recharge_"):
-            cid=int(call.data.replace("accept_recharge_","")); admin_states[uid]={"step":"await_amount","target":cid}; bot.send_message(uid,f"💰 Enter amount for {cid}:"); return
-        cid=int(call.data.replace("accept_","")); bot.send_message(uid,f"✏️ Reply for {cid}:"); bot.register_next_step_handler(call.message, lambda m: do_send(m,cid))
-    elif call.data.startswith("reject_"):
-        if not is_admin(uid): return
-        if call.data.startswith("reject_recharge_"):
-            cid=int(call.data.replace("reject_recharge_","")); bot.send_message(cid,"❌ Rejected");
-            if cid in pending_recharge: del pending_recharge[cid]; return
-        if "refund" in call.data:
-            cid=int(call.data.replace("reject_refund_","")); info=pending_orders.get(cid,{})
-            if info: add_balance(cid,info.get("price",0)); bot.send_message(cid,f"❌ Rejected & refunded ${info.get('price')}")
-            if cid in pending_orders: del pending_orders[cid]
+    d=call.data
 
-def do_send(message,cid):
-    txt=message.text; info=pending_orders.get(cid,{})
-    bot.send_message(cid,f"✅ Delivered:\n📦 {info.get('name')}\n{txt}"); bot.send_message(message.chat.id,f"✅ Sent to {cid}")
-    if cid in pending_orders: del pending_orders[cid]
+    if d=="check":
+        sub_cache.pop(uid,None)
+        ok,nj=check_sub(uid)
+        if not ok: bot.answer_callback_query(call.id,"Not yet!"); return
+        bot.edit_message_text(f"Balance: ${round(get_balance(uid),2)}",uid,call.message.message_id,reply_markup=main_menu(uid))
+        return
+
+    if uid==ADMIN_ID:
+        if d=="admin_stats":
+            total=sum(float(v) for v in balance_cache.values())
+            bot.edit_message_text(f"📊 احصائيات\n💰 اجمالي: ${round(total,2)}\n👥 عملاء: {len(users_cache)}\n⏳ معلقة: {len(pending_orders)}",uid,call.message.message_id,reply_markup=admin_menu())
+        elif d=="admin_add":
+            admin_states[uid]="await_id"
+            bot.send_message(uid,"💰 ابعت ايدي العميل:")
+        elif d=="admin_bc":
+            broadcast_mode[uid]=True
+            bot.send_message(uid,"📢 ابعت رسالة الاذاعة:\n/cancel للالغاء")
+        elif d=="admin_user":
+            bot.send_message(uid,"وضع العميل:",reply_markup=main_menu(uid))
+        elif d.startswith("accept_"):
+            if d.startswith("accept_re_"):
+                cid=int(d.replace("accept_re_",""))
+                admin_states[uid]=f"await_amount_{cid}"
+                bot.send_message(uid,f"💰 ادخل المبلغ لـ {cid}:")
+                return
+            cid=int(d.replace("accept_",""))
+            admin_states[uid]=f"await_reply_{cid}"
+            bot.send_message(uid,f"✏️ اكتب الرد لـ {cid}:")
+        elif d.startswith("reject_"):
+            if d.startswith("reject_re_"):
+                cid=int(d.replace("reject_re_",""))
+                bot.send_message(cid,"❌ Recharge rejected")
+                pending_recharge.pop(cid,None)
+                bot.send_message(uid,"تم الرفض")
+                return
+            cid=int(d.replace("reject_",""))
+            info=pending_orders.get(cid)
+            if info:
+                add_balance(cid,info['price'])
+                bot.send_message(cid,f"❌ Rejected & refunded ${info['price']}")
+            pending_orders.pop(cid,None)
+            bot.send_message(uid,"تم الرفض والاسترجاع")
+        return
+
+    if d=="bal": bot.answer_callback_query(call.id,f"${round(get_balance(uid),2)}"); return
+    if d=="back":
+        try: bot.edit_message_text(f"Balance: ${round(get_balance(uid),2)}",uid,call.message.message_id,reply_markup=main_menu(uid))
+        except: pass
+        return
+    if d=="nums": bot.edit_message_text("🛒 Choose category:",uid,call.message.message_id,reply_markup=nums_menu()); return
+    if d=="clean": bot.edit_message_text("✨ Clean:",uid,call.message.message_id,reply_markup=build_nums(CLEAN,"clean")); return
+    if d=="spam": bot.edit_message_text("🔥 Spam:",uid,call.message.message_id,reply_markup=build_nums(SPAM,"spam")); return
+    if d=="wa": bot.edit_message_text("💚 WhatsApp:",uid,call.message.message_id,reply_markup=build_nums(WHATSAPP,"wa")); return
+    if d=="tiktok": bot.edit_message_text("🎵 TikTok Numbers:",uid,call.message.message_id,reply_markup=build_nums(TIKTOK,"tiktok")); return
+    if d=="fb": bot.edit_message_text("👤 Facebook Numbers:",uid,call.message.message_id,reply_markup=build_nums(FACEBOOK,"fb")); return
+    if d=="insta": bot.edit_message_text("📸 Instagram:",uid,call.message.message_id,reply_markup=build_nums(INSTA,"insta")); return
+    if d=="tinder": bot.edit_message_text("🔥 Tinder:",uid,call.message.message_id,reply_markup=build_nums(TINDER,"tinder")); return
+    if d=="followers_main": bot.edit_message_text("👥 Choose Platform:\n10 Followers = $0.09 up to 500",uid,call.message.message_id,reply_markup=followers_platforms_menu()); return
+    if d.startswith("fp_"):
+        platform=d.replace("fp_","")
+        bot.edit_message_text(f"👥 {platform} - Choose count:\n10 = $0.09 up to 500",uid,call.message.message_id,reply_markup=followers_counts_menu(platform))
+        return
+    if d=="stars":
+        m=types.InlineKeyboardMarkup(row_width=2)
+        for k,price in STARS.items(): m.add(types.InlineKeyboardButton(f"{k} Stars ${price}",callback_data=f"buy_stars_{k}"))
+        m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back"))
+        bot.edit_message_text("⭐ Stars Gifts:",uid,call.message.message_id,reply_markup=m); return
+    if d=="recharge":
+        m=types.InlineKeyboardMarkup(row_width=2)
+        for k,(name,addr) in PAYMENTS.items(): m.add(types.InlineKeyboardButton(name,callback_data=f"pay_{k}"))
+        m.add(types.InlineKeyboardButton("⬅️ Back",callback_data="back"))
+        bot.edit_message_text(f"💳 Recharge - ${round(get_balance(uid),2)}",uid,call.message.message_id,reply_markup=m); return
+    if d.startswith("pay_"):
+        k=d.replace("pay_","")
+        name,addr=PAYMENTS[k]
+        pending_recharge[uid]=k
+        bot.edit_message_text(f"{name}\n\n`{addr}`\n\n📸 Send screenshot",uid,call.message.message_id,parse_mode="Markdown",reply_markup=types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("⬅️ Back",callback_data="recharge"))); return
+    if d.startswith("buy_"):
+        try:
+            parts=d.split("_")
+            if parts[1]=="followers":
+                _,_,platform,count = parts
+                price=FOLLOWER_COUNTS[count]
+                name=f"{platform} {count} Followers"
+            elif parts[1]=="stars":
+                count=parts[2]
+                price=STARS[count]
+                name=f"{count} Stars"
+            else:
+                cat=parts[1]
+                country=parts[2]
+                price=0
+                if cat=="clean": price=CLEAN[country]
+                elif cat=="spam": price=SPAM[country]
+                elif cat=="wa": price=WHATSAPP[country]
+                elif cat=="tiktok": price=TIKTOK[country]
+                elif cat=="fb": price=FACEBOOK[country]
+                elif cat=="insta": price=INSTA[country]
+                elif cat=="tinder": price=TINDER[country]
+                name=f"{cat} {country}"
+            if get_balance(uid)<price: bot.answer_callback_query(call.id,f"Need ${price}"); return
+            deduct_balance(uid,price)
+            pending_orders[uid]={"price":price,"name":name}
+            m=types.InlineKeyboardMarkup(row_width=2)
+            m.add(types.InlineKeyboardButton("✅ Accept",callback_data=f"accept_{uid}"),types.InlineKeyboardButton("❌ Reject+Refund",callback_data=f"reject_{uid}"))
+            bot.send_message(ADMIN_ID,f"🔔 Order\n👤 {uid}\n📦 {name} ${price}",reply_markup=m)
+            bot.answer_callback_query(call.id,"Sent!")
+            bot.edit_message_text(f"✅ Deducted ${price}\n⏳ Waiting admin\n📦 {name}",uid,call.message.message_id,reply_markup=main_menu(uid))
+        except Exception as e: print(e)
+        return
 
 @bot.message_handler(content_types=['photo','document','text'])
-def handler(message):
-    uid=message.chat.id
-    if uid in admin_states:
-        st=admin_states[uid]
-        if st["step"]=="await_id":
-            try: target=int(message.text); admin_states[uid]={"step":"await_amount","target":target}; bot.send_message(uid,f"✅ ID {target}\n💰 Amount:"); return
-            except: bot.send_message(uid,"❌ Wrong ID"); return
-        elif st["step"]=="await_amount":
-            try: amount=float(message.text); target=st["target"]; add_balance(target,amount); bot.send_message(uid,f"✅ Added ${amount} to {target}",reply_markup=admin_main_menu()); bot.send_message(target,f"✅ Recharged ${amount}$")
+def all_msg(msg):
+    uid=msg.chat.id
+    txt=msg.text or ""
+    if uid==ADMIN_ID and uid in admin_states:
+        state=admin_states[uid]
+        if state=="await_id":
+            try:
+                target=int(txt)
+                admin_states[uid]=f"await_amount_{target}"
+                bot.send_message(uid,f"✅ ID {target}\n💰 Amount:")
+            except: bot.send_message(uid,"❌ Wrong ID")
+            return
+        if state.startswith("await_amount_"):
+            try:
+                target=int(state.split("_")[-1])
+                amt=float(txt)
+                new_bal=add_balance(target,amt)
+                bot.send_message(uid,f"✅ Added ${amt} to {target}\n${round(new_bal,2)}",reply_markup=admin_menu())
+                bot.send_message(target,f"✅ Recharged ${amt}\nBalance ${round(new_bal,2)}")
+                pending_recharge.pop(target,None)
+                del admin_states[uid]
             except: bot.send_message(uid,"❌ Wrong amount")
-            if target in pending_recharge: del pending_recharge[target]
-            if uid in admin_states: del admin_states[uid]; return
-    if is_admin(uid) and broadcast_mode.get(uid):
-        users=list(get_users().keys()); count=0
-        for u in users:
-            try: bot.copy_message(int(u),uid,message.message_id); count+=1; time.sleep(0.05)
+            return
+        if state.startswith("await_reply_"):
+            try:
+                target=int(state.split("_")[-1])
+                info=pending_orders.get(target,{})
+                bot.send_message(target,f"✅ Delivered:\n📦 {info.get('name')} ${info.get('price')}\n\n{txt}")
+                bot.send_message(uid,f"✅ Sent to {target}",reply_markup=admin_menu())
+                pending_orders.pop(target,None)
+                del admin_states[uid]
             except: pass
-        bot.send_message(uid,f"✅ Broadcast to {count}",reply_markup=admin_main_menu()); del broadcast_mode[uid]; return
+            return
+    if uid==ADMIN_ID and uid in broadcast_mode:
+        if txt=="/cancel":
+            del broadcast_mode[uid]
+            bot.send_message(uid,"تم الالغاء",reply_markup=admin_menu())
+            return
+        count=0
+        for u in list(users_cache.keys()):
+            try: bot.copy_message(int(u),uid,msg.message_id); count+=1
+            except: pass
+        bot.send_message(uid,f"✅ Broadcast to {count}",reply_markup=admin_menu())
+        del broadcast_mode[uid]
+        return
     if uid in pending_recharge:
-        markup=types.InlineKeyboardMarkup(row_width=2); markup.add(types.InlineKeyboardButton("✅ Accept",callback_data=f"accept_recharge_{uid}"),types.InlineKeyboardButton("❌ Reject",callback_data=f"reject_recharge_{uid}"))
-        try: bot.forward_message(ADMIN_ID,uid,message.message_id)
+        m=types.InlineKeyboardMarkup(row_width=2)
+        m.add(types.InlineKeyboardButton("✅ Accept",callback_data=f"accept_re_{uid}"),types.InlineKeyboardButton("❌ Reject",callback_data=f"reject_re_{uid}"))
+        try: bot.forward_message(ADMIN_ID,uid,msg.message_id)
         except: pass
-        bot.send_message(ADMIN_ID,f"💳 Recharge\n👤 {uid}",reply_markup=markup)
-        bot.send_message(uid,"✅ Received, waiting admin"); return
-    if uid in pending_orders and not is_admin(uid):
-        try: bot.forward_message(ADMIN_ID,uid,message.message_id)
+        bot.send_message(ADMIN_ID,f"💳 Recharge\n👤 {uid}\n{pending_recharge[uid]}",reply_markup=m)
+        bot.send_message(uid,"✅ Received, waiting admin")
+        return
+    if uid in pending_orders and uid!=ADMIN_ID:
+        try: bot.forward_message(ADMIN_ID,uid,msg.message_id)
         except: pass
+        return
 
-print("Bot V34 with new token running...")
+print("V38 FULL - Followers 10=$0.09 to 500 running...")
 bot.delete_webhook(drop_pending_updates=True)
-time.sleep(2)
-bot.infinity_polling(none_stop=True, timeout=60, long_polling_timeout=60)
+time.sleep(1)
+bot.infinity_polling(none_stop=True, timeout=10, long_polling_timeout=10, skip_pending=True)
