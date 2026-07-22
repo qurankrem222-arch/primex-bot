@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 import json, os, time
 
-TOKEN = os.getenv("8410968304:AAEdDRcgVklY7GauXJnSNjjeQ6A3DOIuRLA")
+TOKEN = os.getenv("8410968304:AAEwoOxU4stdUEK_JSefuLGov3nMD1iQT6s")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "8410968304"))
 BOT_USERNAME = "SocialSMSbot"
 SUPPORT = "@SocialSMSSUPPORT"
